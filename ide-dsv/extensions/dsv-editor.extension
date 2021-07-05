@@ -1,0 +1,5 @@
+{
+    "module": "ide-dsv/services/dsv-editor-view.js",
+    "extensionPoint": "ide-view",
+    "description": "DSV file editor view"
+}

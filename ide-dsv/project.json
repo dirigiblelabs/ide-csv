@@ -1,0 +1,8 @@
+{
+    "guid": "ide-dsv",
+    "repository": {
+        "type": "git",
+        "branch": "main",
+        "url": "https://github.com/dirigiblelabs/ide-dsv.git"
+    }
+}
