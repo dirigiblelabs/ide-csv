@@ -9,14 +9,16 @@
  * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
-exports.getView = function () {
-	var view = {
-		"id": "dsv-editor",
+exports.getEditor = function () {
+	var editor = {
+		"id": "DSV Editor",
 		"name": "DSV Editor",
 		"factory": "frame",
 		"region": "center-top",
 		"label": "DSV Editor",
-		"link": "../ide-dsv/dsv-editor.html"
+		"link": "../ide-dsv/dsv-editor.html",
+		"defaultEditor": true,
+		"contentTypes": ["text/csv"]
 	};
-	return view;
+	return editor;
 }

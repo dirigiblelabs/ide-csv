@@ -34,14 +34,16 @@
 	<link type="text/css" rel="stylesheet" href="../../../../services/v4/js/theme/resources.js/ide.css" />
 
 	<!-- Project-specific stuff -->
-	<script src="js/dsv-editor.js"></script>
+	<script src="js/papaparse.min.js"></script>
 	<script src="js/ag-grid-community.min.js"></script>
+	<script src="js/dsv-editor.js"></script>
+	<link type="text/css" rel="stylesheet" href="css/dsv.css" />
 
 </head>
 
 <body ng-app="dsv-editor" ng-controller="DsvViewController as dvc" class="view dsv-editor-body">
 
-	<div>DSV</div>
+	<div ag-grid="gridOptions" class="dsv-editor ag-theme-alpine"></div>
 
 </body>
 
