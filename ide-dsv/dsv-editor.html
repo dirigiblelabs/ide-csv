@@ -20,6 +20,9 @@
 	<script src="../../../../services/v4/web/resources/angular/1.4.7/angular.min.js"></script>
 	<script src="../../../../services/v4/web/resources/angular/1.4.7/angular-resource.min.js"></script>
 
+	<!-- Font Awesome -->
+	<link href="../../../../services/v4/web/resources/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
 	<!-- jQuery -->
 	<script src="../../../../services/v4/web/resources/jquery/3.4.1/jquery.min.js"></script>
 
@@ -43,7 +46,22 @@
 
 <body ng-app="dsv-editor" ng-controller="DsvViewController as dvc" class="view dsv-editor-body">
 
-	<div ag-grid="gridOptions" class="dsv-editor ag-theme-alpine"></div>
+	<div class="load-screen" ng-hide="dataLoaded">
+		<p class="text-center">Loading data...</p>
+		<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0"
+			aria-valuemax="100">
+		</div>
+	</div>
+
+	<div class="quick-actions-bar" ng-show="dataLoaded">
+		<div class="btn-group pull-right" role="group" aria-label="toolbar">
+			<button type="button" class="btn btn-default btn-top" title="Save" ng-click="save()"><i class="fa fa-floppy-o"></i> Save</button>
+			<button type="button" class="btn btn-default btn-top" title="Export" ng-click="downloadCsv()"><i class="fa fa-download"></i> Export</button>
+		</div>
+	</div>
+
+	<div ag-grid="gridOptions" class="dsv-editor ag-theme-alpine" ng-show="dataLoaded" ng-keydown="keyDownFunc($event)">
+	</div>
 
 </body>
 
