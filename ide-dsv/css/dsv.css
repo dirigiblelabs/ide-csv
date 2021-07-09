@@ -26,6 +26,12 @@
 .quick-actions-bar .btn-top > i {
     margin-right: 6px;
 }
+.quick-actions-bar input {
+    display: inline-block;
+    max-width: 320px;
+    height: 27px;
+    font-size: 14px;
+}
 .load-screen {
     display: flex;
     background-color: #fff;

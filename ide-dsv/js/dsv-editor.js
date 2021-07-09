@@ -11,7 +11,7 @@
  */
 
 agGrid.initialiseAgGridWithAngular1(angular);
-let dsvView = angular.module('dsv-editor', ["agGrid"]);
+let dsvView = angular.module('dsv-editor', ["agGrid", "directive.contextMenu"]);
 
 dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, $window) {
     let messageHub = new FramesMessageHub();
@@ -69,18 +69,37 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         fillGrid();
     }
 
+    function fileChanged() {
+        isFileChanged = true;
+        messageHub.post({ data: $scope.file }, 'editor.file.dirty');
+    }
+
     function fillGrid() {
         let csvData = Papa.parse(csvRaw, papaConfig);
-        let columnDefs = csvData.meta.fields.map(name => ({ headerName: name, field: name }));
+        let columnDefs = csvData.meta.fields.map(
+            name => (
+                {
+                    headerName: name,
+                    field: name
+                }
+            )
+        );
+        columnDefs[0].rowDrag = true; // Adding drag handle to first element only
         $scope.gridOptions = {
             defaultColDef: {
                 sortable: true,
                 filter: true,
                 editable: true,
-                resizable: true
+                resizable: true,
+                flex: 1
             },
+            rowDragManaged: true,
+            suppressMoveWhenRowDragging: true,
+            enableMultiRowDragging: true,
+            animateRows: false,
             columnDefs: columnDefs,
             rowData: csvData.data,
+            rowSelection: 'multiple',
             enableSorting: true,
             enableColResize: true,
             onColumnResized: function (params) {
@@ -93,8 +112,13 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 $scope.dataLoaded = true;
             },
             onCellValueChanged: function (event) {
-                isFileChanged = true;
-                messageHub.post({ data: $scope.file }, 'editor.file.dirty');
+                fileChanged();
+            },
+            onColumnMoved: function (event) {
+                fileChanged();
+            },
+            onRowDragEnd: function (event) {
+                fileChanged();
             }
         };
     }
@@ -152,6 +176,10 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         contents = $scope.gridOptions.api.getDataAsCsv();;
         saveContents(contents);
     };
+
+    $scope.filterCsv = function () {
+        $scope.gridOptions.api.setQuickFilter($scope.filterInput);
+    }
 
     checkPlatform();
     load();

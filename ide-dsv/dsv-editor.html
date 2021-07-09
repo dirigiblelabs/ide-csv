@@ -39,6 +39,7 @@
 	<!-- Project-specific stuff -->
 	<script src="js/papaparse.min.js"></script>
 	<script src="js/ag-grid-community.min.js"></script>
+	<script src="js/context.js"></script>
 	<script src="js/dsv-editor.js"></script>
 	<link type="text/css" rel="stylesheet" href="css/dsv.css" />
 
@@ -54,6 +55,7 @@
 	</div>
 
 	<div class="quick-actions-bar" ng-show="dataLoaded">
+		<input class="form-control" type="text" placeholder="Quick filter" ng-keyup="filterCsv()" ng-model="filterInput">
 		<div class="btn-group pull-right" role="group" aria-label="toolbar">
 			<button type="button" class="btn btn-default btn-top" title="Save" ng-click="save()"><i class="fa fa-floppy-o"></i> Save</button>
 			<button type="button" class="btn btn-default btn-top" title="Export" ng-click="downloadCsv()"><i class="fa fa-download"></i> Export</button>
