@@ -1,3 +1,27 @@
+.load-screen {
+  display: flex;
+  background-color: #fff;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin: 0;
+  padding: 24px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+.load-screen .progress-bar {
+  max-width: 600px;
+  width: 100%;
+  height: 14px;
+}
+.load-screen p {
+  font-size: 20px;
+  margin: 16px;
+}
 .dsv-editor-body {
   display: flex;
   flex-direction: column;
@@ -7,6 +31,19 @@
 }
 .dsv-editor {
   flex-grow: 1;
+}
+.ag-grid-editor {
+  flex-grow: 1;
+}
+.header-input {
+  display: none;
+  margin: 2px;
+  height: 60%;
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+.header-input:focus {
+  border: 1px solid #e5f0fa;
 }
 .quick-actions-bar {
   background-color: #f8f8f8;
@@ -32,27 +69,9 @@
   height: 27px;
   font-size: 14px;
 }
-.load-screen {
-  display: flex;
-  background-color: #fff;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  margin: 0;
-  padding: 24px;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+.dropdown-menu .dropdown-item {
+  padding: 8px 16px;
 }
-.load-screen .progress-bar {
-  max-width: 600px;
-  width: 100%;
-  height: 14px;
-}
-.load-screen p {
-  font-size: 20px;
-  margin: 16px;
+.dropdown-menu .dropdown-item:hover {
+  background-color: #e5f0fa;
 }

@@ -44,7 +44,8 @@
 
 </head>
 
-<body ng-app="dsv-editor" ng-controller="DsvViewController as dvc" class="view dsv-editor-body">
+<body ng-app="dsv-editor" ng-controller="DsvViewController as dvc" class="view dsv-editor-body"
+	ng-mousedown="handleClick($event)" oncontextmenu="return false" ng-keydown="keyDownFunc($event)">
 
 	<div class="load-screen" ng-hide="dataLoaded">
 		<p class="text-center">Loading data...</p>
@@ -64,8 +65,24 @@
 		</div>
 	</div>
 
-	<div ag-grid="gridOptions" class="dsv-editor ag-theme-alpine" ng-show="dataLoaded" ng-keydown="keyDownFunc($event)">
+	<div ag-grid="gridOptions" class="ag-grid-editor ag-theme-alpine" ng-show="dataLoaded">
 	</div>
+
+	<!-- Context menu for rows -->
+	<ul class="dropdown-menu" ng-style="rowMenuStyle">
+		<li class="dropdown-item" ng-click="addRowAbove()">Add row above</li>
+		<li class="dropdown-item" ng-click="addRowBelow()">Add row below</li>
+		<li class="divider"></li>
+		<li class="dropdown-item" ng-click="deleteRow()">Delete row</li>
+	</ul>
+
+	<!-- Context menu for columns -->
+	<ul class="dropdown-menu" ng-style="headerMenuStyle">
+		<li class="dropdown-item" ng-click="addColumn()">Add column</li>
+		<li class="dropdown-item" ng-click="editColumn()">Edit column</li>
+		<li class="divider"></li>
+		<li class="dropdown-item" ng-click="deleteColumn()">Delete column</li>
+	</ul>
 
 </body>
 
