@@ -20,8 +20,12 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     let manual = false;
     let isMac = false;
     let isFileChanged = false;
-    $scope.rowMenuStyle = { 'display': 'none' };
-    $scope.headerMenuStyle = { 'display': 'none' };
+    $scope.menuStyle = { 'display': 'none' };
+    $scope.menuContext = { // Used for context menu content visibility
+        viewport: false,
+        row: false,
+        column: false
+    };
     let focusedCell = {};
     let focusedColumn = '';
     let headerEditMode = false;
@@ -162,42 +166,67 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         }
     }
 
-    function hideContextMenus() {
-        if ($scope.rowMenuStyle.display !== "none") {
-            $scope.rowMenuStyle = {
-                display: "none"
-            };
-        }
-        if ($scope.headerMenuStyle.display !== "none") {
-            $scope.headerMenuStyle = {
+    function hideContextMenu() {
+        if ($scope.menuStyle.display !== "none") {
+            $scope.menuContext.viewport = false;
+            $scope.menuContext.row = false;
+            $scope.menuContext.column = false;
+            $scope.menuStyle = {
                 display: "none"
             };
         }
     }
 
-    function showColumnContextMenu(x, y) {
-        $scope.headerMenuStyle = {
-            position: "fixed",
-            display: "block",
-            left: x + 'px',
-            top: y + 'px'
-        };
-        $scope.rowMenuStyle = {
-            display: "none"
-        };
-    }
-
-    function showRowContextMenu(x, y) {
-        $scope.rowMenuStyle = {
-            position: "fixed",
-            display: "block",
-            left: x + 'px',
-            top: y + 'px'
-        };
-        $scope.headerMenuStyle = {
-            display: "none"
-        };
-    }
+    /**
+     * Simulating named parameters using a params object
+     * It can contain the following parameters:
+     * {
+     *  x: 10, // Required, X position
+     *  y: 10, // Required, Y position
+     *  viewport: true, // Optional, when the menu is for the empty viewport
+     *  row: true, // Optional, when the menu is for a row
+     *  column: true // Optional, when the menu is for a column header
+     * }
+     * The last 3 are optional but one must be specified or the menu will not be shown.
+     */
+    function showContextMenu(params) {
+        if (
+            "viewport" in params &&
+            !("row" in params) &&
+            !("column" in params)
+        ) {
+            $scope.menuContext.viewport = true;
+            $scope.menuContext.row = false;
+            $scope.menuContext.column = false;
+        } else if (
+            !("viewport" in params) &&
+            "row" in params &&
+            !("column" in params)
+        ) {
+            $scope.menuContext.viewport = false;
+            $scope.menuContext.row = true;
+            $scope.menuContext.column = false;
+        } else if (
+            !("viewport" in params) &&
+            !("row" in params) &&
+            "column" in params
+        ) {
+            $scope.menuContext.viewport = false;
+            $scope.menuContext.row = false;
+            $scope.menuContext.column = true;
+        } else
+            return
+        if ("x" in params && "y" in params) {
+            $scope.menuStyle = {
+                position: "fixed",
+                display: "block",
+                left: params.x + 'px',
+                top: params.y + 'px'
+            };
+        } else {
+            hideContextMenu();
+        }
+    };
 
     $scope.handleClick = function (event) {
         if (event.which === 3) {
@@ -207,15 +236,17 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 event.originalTarget.className.includes("ag-cell-label-container")
             ) {
                 focusedColumn = event.originalTarget.attributes.cid.value;
-                showColumnContextMenu(event.clientX, event.clientY);
+                showContextMenu({ x: event.clientX, y: event.clientY, column: true });
             } else if (event.originalTarget.className.includes("ag-cell")) {
                 focusedCell = $scope.gridOptions.api.getFocusedCell();
-                showRowContextMenu(event.clientX, event.clientY);
+                showContextMenu({ x: event.clientX, y: event.clientY, row: true });
+            } else if (event.originalTarget.className.includes("ag-center-cols-viewport")) {
+                showContextMenu({ x: event.clientX, y: event.clientY, viewport: true });
             } else if (
                 !event.originalTarget.className.includes("dropdown-item") &&
                 !event.originalTarget.className.includes("header-input")
             ) {
-                hideContextMenus();
+                hideContextMenu();
                 hideColumnInput();
             }
         } else {
@@ -224,7 +255,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                     !event.originalTarget.className.includes("dropdown-item") &&
                     !event.originalTarget.className.includes("header-input")
                 ) {
-                    hideContextMenus();
+                    hideContextMenu();
                     hideColumnInput();
                 }
             } catch (error) {
@@ -281,7 +312,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         });
         csvData.data.splice(focusedCell.rowIndex, 0, row);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenus();
+        hideContextMenu();
         fileChanged();
     };
 
@@ -292,24 +323,35 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         });
         csvData.data.splice(focusedCell.rowIndex + 1, 0, row);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenus();
+        hideContextMenu();
+        fileChanged();
+    };
+
+    $scope.addRow = function () {
+        let row = {};
+        Object.keys(csvData.data[0]).forEach(key => {
+            row[key] = "";
+        });
+        csvData.data.push(row);
+        $scope.gridOptions.api.setRowData(csvData.data);
+        hideContextMenu();
         fileChanged();
     };
 
     $scope.deleteRow = function () {
         csvData.data.splice(focusedCell.rowIndex, 1);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenus();
+        hideContextMenu();
         fileChanged();
     };
 
     $scope.addColumn = function () {
         console.log("edit header");
-        hideContextMenus();
+        hideContextMenu();
     };
 
     $scope.editColumn = function () {
-        hideContextMenus();
+        hideContextMenu();
         headerEditMode = true;
         let columnDefs = $scope.gridOptions.api.getColumnDefs();
         let index = focusedColumn.replace("cid_", "");
@@ -362,7 +404,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     };
 
     $scope.deleteColumn = function () {
-        hideContextMenus();
+        hideContextMenu();
         console.log("edit header");
     };
 

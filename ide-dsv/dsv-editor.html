@@ -68,20 +68,23 @@
 	<div ag-grid="gridOptions" class="ag-grid-editor ag-theme-alpine" ng-show="dataLoaded">
 	</div>
 
-	<!-- Context menu for rows -->
-	<ul class="dropdown-menu" ng-style="rowMenuStyle">
-		<li class="dropdown-item" ng-click="addRowAbove()">Add row above</li>
-		<li class="dropdown-item" ng-click="addRowBelow()">Add row below</li>
-		<li class="divider"></li>
-		<li class="dropdown-item" ng-click="deleteRow()">Delete row</li>
-	</ul>
-
-	<!-- Context menu for columns -->
-	<ul class="dropdown-menu" ng-style="headerMenuStyle">
-		<li class="dropdown-item" ng-click="addColumn()">Add column</li>
-		<li class="dropdown-item" ng-click="editColumn()">Edit column</li>
-		<li class="divider"></li>
-		<li class="dropdown-item" ng-click="deleteColumn()">Delete column</li>
+	<!-- Context menu -->
+	<ul class="dropdown-menu" ng-style="menuStyle">
+		<span ng-show="menuContext.viewport">
+			<li class="dropdown-item" ng-click="addRow()">Add row</li>
+		</span>
+		<span ng-show="menuContext.row">
+			<li class="dropdown-item" ng-click="addRowAbove()">Add row above</li>
+			<li class="dropdown-item" ng-click="addRowBelow()">Add row below</li>
+			<li class="divider"></li>
+			<li class="dropdown-item" ng-click="deleteRow()">Delete row</li>
+		</span>
+		<span ng-show="menuContext.column">
+			<li class="dropdown-item" ng-click="addColumn()">Add column</li>
+			<li class="dropdown-item" ng-click="editColumn()">Edit column</li>
+			<li class="divider"></li>
+			<li class="dropdown-item" ng-click="deleteColumn()">Delete column</li>
+		</span>
 	</ul>
 
 </body>
