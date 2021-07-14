@@ -23,7 +23,8 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     $scope.rowMenuStyle = { 'display': 'none' };
     $scope.headerMenuStyle = { 'display': 'none' };
     let focusedCell = {};
-    let focusedColumn = undefined;
+    let focusedColumn = '';
+    let headerEditMode = false;
     let csvData;
     $scope.dataLoaded = false;
     $scope.ctrlDown = false;
@@ -214,7 +215,6 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 !event.originalTarget.className.includes("dropdown-item") &&
                 !event.originalTarget.className.includes("header-input")
             ) {
-
                 hideContextMenus();
                 hideColumnInput();
             }
@@ -310,6 +310,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
 
     $scope.editColumn = function () {
         hideContextMenus();
+        headerEditMode = true;
         let columnDefs = $scope.gridOptions.api.getColumnDefs();
         let index = focusedColumn.replace("cid_", "");
         columnDefs[index].sortable = false;
@@ -336,7 +337,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     }
 
     function hideColumnInput() {
-        if (focusedColumn !== undefined && focusedColumn !== null) {
+        if (headerEditMode) {
             let columnInput = $(`#${focusedColumn}`);
             let newTitle = columnInput.val();
             let columnText = $(`#${focusedColumn.replace("cid", "tid")}`);
@@ -356,7 +357,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 $scope.gridOptions.api.setColumnDefs(columnDefs);
                 fileChanged();
             }
-            focusedColumn = undefined;
+            headerEditMode = false;
         }
     };
 
