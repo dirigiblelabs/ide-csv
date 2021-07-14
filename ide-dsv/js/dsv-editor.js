@@ -30,14 +30,19 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     let focusedColumn = '';
     let headerEditMode = false;
     let csvData;
+    let ctrlDown = false;
     $scope.dataLoaded = false;
-    $scope.ctrlDown = false;
     $scope.ctrlKey = 17;
     const papaConfig = {
+        columnIndex: 0, // Custom property, needed for duplicated column names
         delimiter: ",",
         header: true,
         skipEmptyLines: true,
-        dynamicTyping: true
+        dynamicTyping: true,
+        transformHeader: function (headerName) {
+            this.columnIndex++;
+            return `${headerName}_${this.columnIndex}`;
+        }
     };
 
     function checkPlatform() {
@@ -87,7 +92,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         let columnDefs = csvData.meta.fields.map(
             (name, index) => (
                 {
-                    headerName: name,
+                    headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
                     field: name,
                     headerComponentParams: {
                         template:
@@ -148,7 +153,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     function saveContents(text) {
         console.log('Save called...');
         if ($scope.file) {
-            var xhr = new XMLHttpRequest();
+            let xhr = new XMLHttpRequest();
             xhr.open('PUT', '../../../../../../services/v4/ide/workspaces' + $scope.file);
             xhr.setRequestHeader('X-Requested-With', 'Fetch');
             xhr.setRequestHeader('X-CSRF-Token', csrfToken);
@@ -269,7 +274,10 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     }
 
     $scope.keyDownFunc = function ($event) {
-        if ($scope.ctrlDown && String.fromCharCode($event.which).toLowerCase() == 's') {
+        if (
+            ctrlDown &&
+            String.fromCharCode($event.which).toLowerCase() == 's'
+        ) {
             $event.preventDefault();
             if (isFileChanged)
                 $scope.save();
@@ -277,19 +285,14 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     };
 
     angular.element($window).bind("keyup", function ($event) {
-        if (isMac && "metaKey" in $event && $event.metaKey)
-            $scope.ctrlDown = false;
-        else if ($event.keyCode == $scope.ctrlKey)
-            $scope.ctrlDown = false;
-        $scope.$apply();
+        ctrlDown = false;
     });
 
     angular.element($window).bind("keydown", function ($event) {
         if (isMac && "metaKey" in $event && $event.metaKey)
-            $scope.ctrlDown = true;
+            ctrlDown = true;
         else if ($event.keyCode == $scope.ctrlKey)
-            $scope.ctrlDown = true;
-        $scope.$apply();
+            ctrlDown = true;
     });
 
     $scope.downloadCsv = function () {
@@ -306,59 +309,123 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     };
 
     $scope.addRowAbove = function () {
+        hideContextMenu();
         let row = {};
         Object.keys(csvData.data[0]).forEach(key => {
             row[key] = "";
         });
         csvData.data.splice(focusedCell.rowIndex, 0, row);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenu();
         fileChanged();
     };
 
     $scope.addRowBelow = function () {
+        hideContextMenu();
         let row = {};
         Object.keys(csvData.data[0]).forEach(key => {
             row[key] = "";
         });
         csvData.data.splice(focusedCell.rowIndex + 1, 0, row);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenu();
         fileChanged();
     };
 
     $scope.addRow = function () {
+        hideContextMenu();
         let row = {};
         Object.keys(csvData.data[0]).forEach(key => {
             row[key] = "";
         });
         csvData.data.push(row);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenu();
         fileChanged();
     };
 
     $scope.deleteRow = function () {
+        hideContextMenu();
         csvData.data.splice(focusedCell.rowIndex, 1);
         $scope.gridOptions.api.setRowData(csvData.data);
-        hideContextMenu();
         fileChanged();
     };
 
-    $scope.addColumn = function () {
-        console.log("edit header");
+    $scope.addColumnBefore = function () {
         hideContextMenu();
+        let columnDefs = $scope.gridOptions.columnDefs;
+        let index = parseInt(focusedColumn.replace("cid_", ""));
+        let column = {
+            field: `c_${columnDefs.length + 1}`,
+            headerName: 'New column',
+            headerComponentParams: {
+                template:
+                    `<div cid="cid_${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
+                    '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
+                    `  <div cid="cid_${columnDefs.length}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                    `    <input id="cid_${columnDefs.length}" class="header-input" type="text">` +
+                    `    <span cid="cid_${columnDefs.length}" id="tid_${columnDefs.length}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                    '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
+                    '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
+                    '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+                    '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
+                    '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
+                    '  </div>' +
+                    '</div>'
+            }
+        };
+        columnDefs.splice(index, 0, column);
+        $scope.gridOptions.api.setColumnDefs(columnDefs);
+        fileChanged();
+    };
+
+    $scope.addColumnAfter = function () {
+        hideContextMenu();
+        let columnDefs = $scope.gridOptions.columnDefs;
+        let index = parseInt(focusedColumn.replace("cid_", ""));
+        let column = {
+            field: `c_${columnDefs.length + 1}`,
+            headerName: 'New column',
+            headerComponentParams: {
+                template:
+                    `<div cid="cid_${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
+                    '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
+                    `  <div cid="cid_${columnDefs.length}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                    `    <input id="cid_${columnDefs.length}" class="header-input" type="text">` +
+                    `    <span cid="cid_${columnDefs.length}" id="tid_${columnDefs.length}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                    '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
+                    '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
+                    '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+                    '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
+                    '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
+                    '  </div>' +
+                    '</div>'
+            }
+        };
+        columnDefs.splice(index + 1, 0, column);
+        $scope.gridOptions.api.setColumnDefs(columnDefs);
+        fileChanged();
     };
 
     $scope.editColumn = function () {
         hideContextMenu();
         headerEditMode = true;
         let columnDefs = $scope.gridOptions.api.getColumnDefs();
-        let index = focusedColumn.replace("cid_", "");
+        let index = parseInt(focusedColumn.replace("cid_", ""));
         columnDefs[index].sortable = false;
         columnDefs[index].filter = false;
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         showColumnInput();
+    };
+
+    $scope.deleteColumn = function () {
+        hideContextMenu();
+        let columnDefs = $scope.gridOptions.columnDefs;
+        let index = parseInt(focusedColumn.replace("cid_", ""));
+        for (let i = 0; i < csvData.data.length; i++) {
+            delete csvData.data[i][columnDefs[index].field];
+        }
+        columnDefs.splice(index, 1);
+        $scope.gridOptions.api.setRowData(csvData.data);
+        $scope.gridOptions.api.setColumnDefs(columnDefs);
+        fileChanged();
     };
 
     function showColumnInput() {
@@ -401,11 +468,6 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
             }
             headerEditMode = false;
         }
-    };
-
-    $scope.deleteColumn = function () {
-        hideContextMenu();
-        console.log("edit header");
     };
 
     checkPlatform();
