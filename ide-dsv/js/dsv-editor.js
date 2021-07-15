@@ -27,12 +27,12 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         column: false
     };
     let focusedCell = {};
-    let focusedColumn = '';
+    let focusedColumnIndex = -1;
     let headerEditMode = false;
     let csvData;
     let ctrlDown = false;
     $scope.dataLoaded = false;
-    $scope.ctrlKey = 17;
+    const ctrlKey = 17;
     const papaConfig = {
         columnIndex: 0, // Custom property, needed for duplicated column names
         delimiter: ",",
@@ -42,6 +42,9 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         transformHeader: function (headerName) {
             this.columnIndex++;
             return `${headerName}_${this.columnIndex}`;
+        },
+        complete: function () {
+            this.columnIndex = 0;
         }
     };
 
@@ -96,11 +99,11 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                     field: name,
                     headerComponentParams: {
                         template:
-                            `<div cid="cid_${index}" class="ag-cell-label-container" role="presentation">` +
+                            `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
                             '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                            `  <div cid="cid_${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                            `    <input id="cid_${index}" class="header-input" type="text">` +
-                            `    <span cid="cid_${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                            `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                            `    <input id="iid_${index}" class="header-input" type="text">` +
+                            `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
                             '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
                             '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
                             '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
@@ -240,7 +243,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 event.originalTarget.className.includes("ag-header-cell-text") ||
                 event.originalTarget.className.includes("ag-cell-label-container")
             ) {
-                focusedColumn = event.originalTarget.attributes.cid.value;
+                focusedColumnIndex = parseInt(event.originalTarget.attributes.cid.value);
                 showContextMenu({ x: event.clientX, y: event.clientY, column: true });
             } else if (event.originalTarget.className.includes("ag-cell")) {
                 focusedCell = $scope.gridOptions.api.getFocusedCell();
@@ -291,7 +294,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     angular.element($window).bind("keydown", function ($event) {
         if (isMac && "metaKey" in $event && $event.metaKey)
             ctrlDown = true;
-        else if ($event.keyCode == $scope.ctrlKey)
+        else if ($event.keyCode == ctrlKey)
             ctrlDown = true;
     });
 
@@ -348,20 +351,19 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         fileChanged();
     };
 
-    $scope.addColumnBefore = function () {
+    $scope.addColumn = function () {
         hideContextMenu();
         let columnDefs = $scope.gridOptions.columnDefs;
-        let index = parseInt(focusedColumn.replace("cid_", ""));
         let column = {
-            field: `c_${columnDefs.length + 1}`,
             headerName: 'New column',
+            field: `New column_${columnDefs.length + 1}`,
             headerComponentParams: {
                 template:
-                    `<div cid="cid_${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
+                    `<div cid="${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
                     '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                    `  <div cid="cid_${columnDefs.length}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                    `    <input id="cid_${columnDefs.length}" class="header-input" type="text">` +
-                    `    <span cid="cid_${columnDefs.length}" id="tid_${columnDefs.length}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                    `  <div cid="${columnDefs.length}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                    `    <input id="iid_${columnDefs.length}" class="header-input" type="text">` +
+                    `    <span cid="${columnDefs.length}" id="tid_${columnDefs.length}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
                     '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
                     '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
                     '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
@@ -371,35 +373,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                     '</div>'
             }
         };
-        columnDefs.splice(index, 0, column);
-        $scope.gridOptions.api.setColumnDefs(columnDefs);
-        fileChanged();
-    };
-
-    $scope.addColumnAfter = function () {
-        hideContextMenu();
-        let columnDefs = $scope.gridOptions.columnDefs;
-        let index = parseInt(focusedColumn.replace("cid_", ""));
-        let column = {
-            field: `c_${columnDefs.length + 1}`,
-            headerName: 'New column',
-            headerComponentParams: {
-                template:
-                    `<div cid="cid_${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
-                    '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                    `  <div cid="cid_${columnDefs.length}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                    `    <input id="cid_${columnDefs.length}" class="header-input" type="text">` +
-                    `    <span cid="cid_${columnDefs.length}" id="tid_${columnDefs.length}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
-                    '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
-                    '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
-                    '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
-                    '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
-                    '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
-                    '  </div>' +
-                    '</div>'
-            }
-        };
-        columnDefs.splice(index + 1, 0, column);
+        columnDefs.push(column);
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
     };
@@ -408,9 +382,8 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         hideContextMenu();
         headerEditMode = true;
         let columnDefs = $scope.gridOptions.api.getColumnDefs();
-        let index = parseInt(focusedColumn.replace("cid_", ""));
-        columnDefs[index].sortable = false;
-        columnDefs[index].filter = false;
+        columnDefs[focusedColumnIndex].sortable = false;
+        columnDefs[focusedColumnIndex].filter = false;
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         showColumnInput();
     };
@@ -418,19 +391,18 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     $scope.deleteColumn = function () {
         hideContextMenu();
         let columnDefs = $scope.gridOptions.columnDefs;
-        let index = parseInt(focusedColumn.replace("cid_", ""));
         for (let i = 0; i < csvData.data.length; i++) {
-            delete csvData.data[i][columnDefs[index].field];
+            delete csvData.data[i][columnDefs[focusedColumnIndex].field];
         }
-        columnDefs.splice(index, 1);
+        columnDefs.splice(focusedColumnIndex, 1);
         $scope.gridOptions.api.setRowData(csvData.data);
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
     };
 
     function showColumnInput() {
-        let columnInput = $(`#${focusedColumn}`);
-        let columnText = $(`#${focusedColumn.replace("cid", "tid")}`);
+        let columnInput = $(`#iid_${focusedColumnIndex}`);
+        let columnText = $(`#tid_${focusedColumnIndex}`);
         columnInput.val(columnText.text());
         columnInput.css({
             'display': 'inline-block'
@@ -447,9 +419,9 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
 
     function hideColumnInput() {
         if (headerEditMode) {
-            let columnInput = $(`#${focusedColumn}`);
+            let columnInput = $(`#iid_${focusedColumnIndex}`);
             let newTitle = columnInput.val();
-            let columnText = $(`#${focusedColumn.replace("cid", "tid")}`);
+            let columnText = $(`#tid_${focusedColumnIndex}`);
             columnInput.css({
                 'display': 'none'
             });
@@ -459,10 +431,9 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
             columnInput.off();
             if (newTitle != columnText.text()) {
                 let columnDefs = $scope.gridOptions.api.getColumnDefs();
-                let index = focusedColumn.replace("cid_", "");
-                columnDefs[index].sortable = true;
-                columnDefs[index].filter = true;
-                columnDefs[index].headerName = newTitle;
+                columnDefs[focusedColumnIndex].sortable = true;
+                columnDefs[focusedColumnIndex].filter = true;
+                columnDefs[focusedColumnIndex].headerName = newTitle;
                 $scope.gridOptions.api.setColumnDefs(columnDefs);
                 fileChanged();
             }
