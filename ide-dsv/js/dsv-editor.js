@@ -31,11 +31,12 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     let headerEditMode = false;
     let csvData;
     let ctrlDown = false;
+    let delimiter = ',';
     $scope.dataLoaded = false;
     const ctrlKey = 17;
-    const papaConfig = {
+    $scope.papaConfig = {
         columnIndex: 0, // Custom property, needed for duplicated column names
-        delimiter: ",",
+        //delimiter: ",",
         header: true,
         skipEmptyLines: true,
         dynamicTyping: true,
@@ -82,8 +83,14 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         let searchParams = new URLSearchParams(window.location.search);
         $scope.file = searchParams.get('file');
         contents = loadContents($scope.file);
-        csvData = Papa.parse(contents, papaConfig);
+        csvData = Papa.parse(contents, $scope.papaConfig);
+        delimiter = csvData.meta.delimiter;
         fillGrid();
+    }
+
+    function reload() {
+        csvData = Papa.parse(contents, $scope.papaConfig);
+        reloadGrid();
     }
 
     function fileChanged() {
@@ -91,32 +98,86 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         messageHub.post({ data: $scope.file }, 'editor.file.dirty');
     }
 
-    function fillGrid() {
-        let columnDefs = csvData.meta.fields.map(
-            (name, index) => (
-                {
-                    headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
-                    field: name,
-                    headerComponentParams: {
-                        template:
-                            `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
-                            '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                            `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                            `    <input id="iid_${index}" class="header-input" type="text">` +
-                            `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
-                            '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
-                            '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
-                            '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
-                            '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
-                            '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
-                            '  </div>' +
-                            '</div>'
+    function reloadGrid() {
+        if ($scope.papaConfig.header) {
+            let columnDefs = csvData.meta.fields.map(
+                (name, index) => (
+                    {
+                        headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
+                        field: name,
+                        headerComponentParams: {
+                            template:
+                                `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
+                                '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
+                                `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                                `    <input id="iid_${index}" class="header-input" type="text">` +
+                                `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                                '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
+                                '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
+                                '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+                                '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
+                                '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
+                                '  </div>' +
+                                '</div>'
+                        }
                     }
+                )
+            );
+            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
+            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+            $scope.gridOptions.api.setHeaderHeight(undefined);
+            $scope.gridOptions.api.setColumnDefs(columnDefs);
+            $scope.gridOptions.api.setRowData(csvData.data);
+        } else {
+            let data = [];
+            let columnDefs = [];
+            for (let j = 0; j < csvData.data[0].length; j++) {
+                columnDefs.push({ headerName: '', field: `c_${j}` });
+            }
+            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
+            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+            for (let i = 0; i < csvData.data.length; i++) {
+                let obj = {};
+                for (let j = 0; j < csvData.data[i].length; j++) {
+                    obj[`c_${j}`] = csvData.data[i][j];
                 }
-            )
-        );
-        columnDefs[0].rowDrag = true; // Adding drag handle to first column only
-        columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+                data.push(obj);
+            }
+            $scope.gridOptions.api.setHeaderHeight(0);
+            $scope.gridOptions.api.setColumnDefs(columnDefs);
+            $scope.gridOptions.api.setRowData(data);
+        }
+    }
+
+    function fillGrid() {
+        let columnDefs = undefined;
+        if ($scope.papaConfig.header) {
+            columnDefs = csvData.meta.fields.map(
+                (name, index) => (
+                    {
+                        headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
+                        field: name,
+                        headerComponentParams: {
+                            template:
+                                `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
+                                '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
+                                `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                                `    <input id="iid_${index}" class="header-input" type="text">` +
+                                `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                                '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
+                                '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
+                                '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+                                '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
+                                '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
+                                '  </div>' +
+                                '</div>'
+                        }
+                    }
+                )
+            );
+            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
+            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+        }
         $scope.gridOptions = {
             defaultColDef: {
                 sortable: true,
@@ -125,13 +186,15 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 editable: true,
                 flex: 1
             },
+            headerHeight: (($scope.papaConfig.header) ? undefined : 0),
+            columnDefs: columnDefs,
+            rowData: csvData.data,
             rowDragManaged: true,
             suppressMoveWhenRowDragging: true,
             enableMultiRowDragging: true,
             animateRows: false,
-            columnDefs: columnDefs,
-            rowData: csvData.data,
             rowSelection: 'multiple',
+            suppressExcelExport: true,
             onColumnResized: function (params) {
                 if (params.finished && manual) {
                     manual = false;
@@ -299,16 +362,32 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
     });
 
     $scope.downloadCsv = function () {
-        $scope.gridOptions.api.exportDataAsCsv();
+        if ($scope.papaConfig.header) {
+            $scope.gridOptions.api.exportDataAsCsv({
+                columnSeparator: delimiter
+            });
+        } else {
+            $scope.gridOptions.api.exportDataAsCsv({
+                skipColumnHeaders: true, columnSeparator: delimiter
+            });
+        }
     };
 
     $scope.save = function () {
-        contents = $scope.gridOptions.api.getDataAsCsv();
+        if ($scope.papaConfig.header) {
+            contents = $scope.gridOptions.api.getDataAsCsv({
+                columnSeparator: delimiter
+            });
+        } else {
+            contents = $scope.gridOptions.api.getDataAsCsv({
+                skipColumnHeaders: true, columnSeparator: delimiter
+            });
+        }
         saveContents(contents);
     };
 
-    $scope.filterCsv = function () {
-        $scope.gridOptions.api.setQuickFilter($scope.filterInput);
+    $scope.searchCsv = function () {
+        $scope.gridOptions.api.setQuickFilter($scope.searchInput);
     };
 
     $scope.addRowAbove = function () {
@@ -398,6 +477,11 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
         $scope.gridOptions.api.setRowData(csvData.data);
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
+    };
+
+    $scope.hasHeader = function (enabled) {
+        $scope.papaConfig.header = enabled;
+        reload();
     };
 
     function showColumnInput() {

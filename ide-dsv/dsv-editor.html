@@ -55,13 +55,24 @@
 	</div>
 
 	<div class="quick-actions-bar" ng-show="dataLoaded">
-		<input class="form-control" type="text" placeholder="Quick filter" ng-keyup="filterCsv()"
-			ng-model="filterInput">
+		<input class="form-control" type="text" placeholder="Search..." ng-keyup="searchCsv()"
+			ng-model="searchInput">
 		<div class="btn-group pull-right" role="group" aria-label="toolbar">
-			<button type="button" class="btn btn-default btn-top" title="Save" ng-click="save()"><i
+			<button type="button" class="btn btn-default btn-actionbar btn-icon-left" title="Save" ng-click="save()"><i
 					class="fa fa-floppy-o"></i> Save</button>
-			<button type="button" class="btn btn-default btn-top" title="Export" ng-click="downloadCsv()"><i
+			<button type="button" class="btn btn-default btn-actionbar btn-icon-left" title="Export" ng-click="downloadCsv()"><i
 					class="fa fa-download"></i> Export</button>
+			<div class="btn-group">
+				<button type="button" class="btn btn-default btn-actionbar" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					<i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+				</button>
+				<ul class="dropdown-menu dropdown-left-manual">
+					<li class="dropdown-item" ng-click="hasHeader(true)" ng-hide="papaConfig.header">Enable header</li>
+					<li class="dropdown-item" ng-click="hasHeader(false)" ng-show="papaConfig.header">Disable header</li>
+					<li role="separator" class="divider"></li>
+					<li class="dropdown-item">Set delimiter</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 
