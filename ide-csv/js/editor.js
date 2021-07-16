@@ -11,9 +11,9 @@
  */
 
 agGrid.initialiseAgGridWithAngular1(angular);
-let dsvView = angular.module('dsv-editor', ["agGrid"]);
+let csvView = angular.module('csv-editor', ["agGrid"]);
 
-dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, $window) {
+csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, $window) {
     let messageHub = new FramesMessageHub();
     let contents;
     let csrfToken;
@@ -501,7 +501,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 hideColumnInput();
             }
         });
-        $scope.gridOptions.navigateToNextHeader = function () {};
+        $scope.gridOptions.navigateToNextHeader = function () { };
     }
 
     function hideColumnInput() {

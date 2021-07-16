@@ -1,5 +1,0 @@
-{
-    "module": "ide-dsv/services/extensionpoint-editor.js",
-    "extensionPoint": "ide-editor",
-    "description": "DSV Editor"
-}

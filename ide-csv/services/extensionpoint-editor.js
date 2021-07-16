@@ -11,12 +11,12 @@
  */
 exports.getEditor = function () {
 	var editor = {
-		"id": "DSV Editor",
-		"name": "DSV Editor",
+		"id": "CSV Editor",
+		"name": "CSV Editor",
 		"factory": "frame",
 		"region": "center-top",
-		"label": "DSV Editor",
-		"link": "../ide-dsv/dsv-editor.html",
+		"label": "CSV Editor",
+		"link": "../ide-csv/editor.html",
 		"defaultEditor": true,
 		"contentTypes": ["text/csv"]
 	};

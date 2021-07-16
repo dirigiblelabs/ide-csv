@@ -14,7 +14,7 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title>DSV editor</title>
+	<title>CSV editor</title>
 
 	<!-- AngularJS -->
 	<script src="../../../../services/v4/web/resources/angular/1.4.7/angular.min.js"></script>
@@ -39,12 +39,12 @@
 	<!-- Project-specific stuff -->
 	<script src="js/papaparse.min.js"></script>
 	<script src="js/ag-grid-community.min.js"></script>
-	<script src="js/dsv-editor.js"></script>
-	<link type="text/css" rel="stylesheet" href="css/dsv.css" />
+	<script src="js/editor.js"></script>
+	<link type="text/css" rel="stylesheet" href="css/editor.css" />
 
 </head>
 
-<body ng-app="dsv-editor" ng-controller="DsvViewController as dvc" class="view dsv-editor-body"
+<body ng-app="csv-editor" ng-controller="CsvViewController as cvc" class="view csv-editor-body"
 	ng-mousedown="handleClick($event)" oncontextmenu="return false" ng-keydown="keyDownFunc($event)">
 
 	<div class="load-screen" ng-hide="dataLoaded">
@@ -55,20 +55,21 @@
 	</div>
 
 	<div class="quick-actions-bar" ng-show="dataLoaded">
-		<input class="form-control" type="text" placeholder="Search..." ng-keyup="searchCsv()"
-			ng-model="searchInput">
+		<input class="form-control" type="text" placeholder="Search..." ng-keyup="searchCsv()" ng-model="searchInput">
 		<div class="btn-group pull-right" role="group" aria-label="toolbar">
 			<button type="button" class="btn btn-default btn-actionbar btn-icon-left" title="Save" ng-click="save()"><i
 					class="fa fa-floppy-o"></i> Save</button>
-			<button type="button" class="btn btn-default btn-actionbar btn-icon-left" title="Export" ng-click="downloadCsv()"><i
-					class="fa fa-download"></i> Export</button>
+			<button type="button" class="btn btn-default btn-actionbar btn-icon-left" title="Export"
+				ng-click="downloadCsv()"><i class="fa fa-download"></i> Export</button>
 			<div class="btn-group">
-				<button type="button" class="btn btn-default btn-actionbar" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				<button type="button" class="btn btn-default btn-actionbar" data-toggle="dropdown" aria-haspopup="true"
+					aria-expanded="false">
 					<i class="fa fa-ellipsis-v" aria-hidden="true"></i>
 				</button>
 				<ul class="dropdown-menu dropdown-left-manual">
 					<li class="dropdown-item" ng-click="hasHeader(true)" ng-hide="papaConfig.header">Enable header</li>
-					<li class="dropdown-item" ng-click="hasHeader(false)" ng-show="papaConfig.header">Disable header</li>
+					<li class="dropdown-item" ng-click="hasHeader(false)" ng-show="papaConfig.header">Disable header
+					</li>
 					<li role="separator" class="divider"></li>
 					<li class="dropdown-item">Set delimiter</li>
 				</ul>

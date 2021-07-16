@@ -22,14 +22,14 @@
   font-size: 20px;
   margin: 16px;
 }
-.dsv-editor-body {
+.csv-editor-body {
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: stretch;
   overflow: hidden;
 }
-.dsv-editor {
+.csv-editor {
   flex-grow: 1;
 }
 .ag-grid-editor {
@@ -39,7 +39,7 @@
   display: none;
   margin: 2px;
   height: 60%;
-  width: 100%;;
+  width: 100%;
   background-color: #fff;
   border: 1px solid #ccc;
 }
