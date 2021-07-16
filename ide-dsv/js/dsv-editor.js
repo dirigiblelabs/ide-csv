@@ -186,6 +186,8 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 editable: true,
                 flex: 1
             },
+            undoRedoCellEditing: true,
+            undoRedoCellEditingLimit: 10,
             headerHeight: (($scope.papaConfig.header) ? undefined : 0),
             columnDefs: columnDefs,
             rowData: csvData.data,
@@ -499,6 +501,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 hideColumnInput();
             }
         });
+        $scope.gridOptions.navigateToNextHeader = function () {};
     }
 
     function hideColumnInput() {
@@ -522,6 +525,7 @@ dsvView.controller('DsvViewController', ['$scope', '$window', function ($scope, 
                 fileChanged();
             }
             headerEditMode = false;
+            $scope.gridOptions.navigateToNextHeader = undefined;
         }
     };
 

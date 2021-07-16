@@ -39,6 +39,7 @@
   display: none;
   margin: 2px;
   height: 60%;
+  width: 100%;;
   background-color: #fff;
   border: 1px solid #ccc;
 }
