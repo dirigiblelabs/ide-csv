@@ -29,7 +29,10 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
     let focusedCellIndex = -1;
     let focusedColumnIndex = -1;
     let headerEditMode = false;
-    let csvData;
+    let csvData = {
+        columns: [],
+        data: []
+    };
     let ctrlDown = false;
     $scope.delimiter = ',';
     $scope.dataLoaded = false;
@@ -78,31 +81,33 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         console.error('file parameter is not present in the URL');
     }
 
-    function load() {
-        let searchParams = new URLSearchParams(window.location.search);
-        $scope.file = searchParams.get('file');
-        contents = loadContents($scope.file);
-        csvData = Papa.parse(contents, $scope.papaConfig);
-        if (csvData.meta.fields.length == 0) {
-            csvData = Papa.parse('"Column"', $scope.papaConfig);
+    function load(reload = false) {
+        if (!reload) {
+            let searchParams = new URLSearchParams(window.location.search);
+            $scope.file = searchParams.get('file');
+            contents = loadContents($scope.file);
         }
-        $scope.delimiter = csvData.meta.delimiter;
-        fillGrid();
-    }
-
-    function reload() {
-        csvData = Papa.parse(contents, $scope.papaConfig);
+        let parsedData = Papa.parse(contents, $scope.papaConfig);
         if ($scope.papaConfig.header) {
-            if (csvData.meta.fields.length == 0) {
-                csvData = Papa.parse('"Column"', $scope.papaConfig);
+            if (parsedData.meta.fields.length == 0) {
+                parsedData = Papa.parse('"Column"', $scope.papaConfig);
             }
+            csvData.data = parsedData.data;
+            csvData.columns = parsedData.meta.fields;
         }
         else {
-            if (csvData.data.length == 0) {
-                csvData = Papa.parse('"Column"', $scope.papaConfig);
+            if (parsedData.data.length == 0) {
+                parsedData = Papa.parse('"Column"', $scope.papaConfig);
             }
+            csvData.data = generateCorrectCsvData(parsedData.data);
+            let columns = [];
+            for (const property in csvData.data[0]) {
+                columns.push(property)
+            }
+            csvData.columns = columns;
         }
-        reloadGrid();
+        $scope.delimiter = parsedData.meta.delimiter;
+        loadGrid(reload);
     }
 
     function fileChanged() {
@@ -110,130 +115,98 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         messageHub.post({ data: $scope.file }, 'editor.file.dirty');
     }
 
-    function reloadGrid() {
-        if ($scope.papaConfig.header) {
-            let columnDefs = csvData.meta.fields.map(
-                (name, index) => (
-                    {
-                        headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
-                        field: name,
-                        cid: index,
-                        headerComponentParams: {
-                            template:
-                                `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
-                                '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                                `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                                `    <input id="iid_${index}" class="header-input" type="text">` +
-                                `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
-                                '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
-                                '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
-                                '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
-                                '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
-                                '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
-                                '  </div>' +
-                                '</div>'
-                        }
+    function loadGrid(reload = false) {
+        let columnDefs = csvData.columns.map(
+            (name, index) => (
+                {
+                    headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
+                    field: name,
+                    cid: index, // Custom property
+                    headerComponentParams: {
+                        template:
+                            `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
+                            '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
+                            `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
+                            `    <input id="iid_${index}" class="header-input" type="text">` +
+                            `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
+                            '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
+                            '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
+                            '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
+                            '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
+                            '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
+                            '  </div>' +
+                            '</div>'
                     }
-                )
+                }
+            )
+        );
+        columnDefs[0].rowDrag = true; // Adding drag handle to first column only
+        columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+        if (reload) {
+            $scope.gridOptions.api.setHeaderHeight(
+                (($scope.papaConfig.header) ? undefined : 0)
             );
-            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
-            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
-            $scope.gridOptions.api.setHeaderHeight(undefined);
             $scope.gridOptions.api.setColumnDefs(columnDefs);
             $scope.gridOptions.api.setRowData(csvData.data);
         } else {
-            let columnDefs = [];
-            for (let j = 0; j < csvData.data[0].length; j++) {
-                columnDefs.push({ headerName: '', field: `c_${j}` });
-            }
-            let data = getHeadlessCsvData();
-            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
-            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
-            $scope.gridOptions.api.setHeaderHeight(0);
-            $scope.gridOptions.api.setColumnDefs(columnDefs);
-            $scope.gridOptions.api.setRowData(data);
-        }
-    }
-
-    function fillGrid() {
-        let columnDefs = undefined;
-        if ($scope.papaConfig.header) {
-            columnDefs = csvData.meta.fields.map(
-                (name, index) => (
-                    {
-                        headerName: name.split(/\_(?=[^\_]+$)/)[0], // Get the name without the index
-                        field: name,
-                        cid: index,
-                        headerComponentParams: {
-                            template:
-                                `<div cid="${index}" class="ag-cell-label-container" role="presentation">` +
-                                '  <span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"></span>' +
-                                `  <div cid="${index}" ref="eLabel" class="ag-header-cell-label" role="presentation">` +
-                                `    <input id="iid_${index}" class="header-input" type="text">` +
-                                `    <span cid="${index}" id="tid_${index}" ref="eText" class="ag-header-cell-text" role="columnheader"></span>` +
-                                '    <span ref="eSortOrder" class="ag-header-icon ag-sort-order" ></span>' +
-                                '    <span ref="eSortAsc" class="ag-header-icon ag-sort-ascending-icon" ></span>' +
-                                '    <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" ></span>' +
-                                '    <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" ></span>' +
-                                '    <span ref="eFilter" class="ag-header-icon ag-filter-icon"></span>' +
-                                '  </div>' +
-                                '</div>'
-                        }
+            $scope.gridOptions = {
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                    editable: true,
+                    flex: 1
+                },
+                undoRedoCellEditing: true,
+                undoRedoCellEditingLimit: 10,
+                headerHeight: (($scope.papaConfig.header) ? undefined : 0),
+                columnDefs: columnDefs,
+                rowData: csvData.data,
+                rowDragManaged: true,
+                suppressMoveWhenRowDragging: true,
+                enableMultiRowDragging: true,
+                animateRows: false,
+                rowSelection: 'multiple',
+                suppressExcelExport: true,
+                suppressPropertyNamesCheck: true, // Because of custom properties
+                onColumnResized: function (params) {
+                    if (params.finished && manual) {
+                        manual = false;
                     }
-                )
-            );
-            columnDefs[0].rowDrag = true; // Adding drag handle to first column only
-            columnDefs[0].headerCheckboxSelection = true; // Adding checkbox to first column only
+                },
+                onGridReady: function (/*$event*/) {
+                    sizeToFit();
+                    $scope.dataLoaded = true;
+                },
+                onCellValueChanged: function (/*$event*/) {
+                    fileChanged();
+                },
+                onColumnMoved: function (/*$event*/) {
+                    fileChanged();
+                },
+                onRowDragEnd: function (/*$event*/) {
+                    fileChanged();
+                },
+                onSortChanged: function (/*$event*/) {
+                    fileChanged();
+                },
+            };
         }
-        $scope.gridOptions = {
-            defaultColDef: {
-                sortable: true,
-                filter: true,
-                resizable: true,
-                editable: true,
-                flex: 1
-            },
-            undoRedoCellEditing: true,
-            undoRedoCellEditingLimit: 10,
-            headerHeight: (($scope.papaConfig.header) ? undefined : 0),
-            columnDefs: columnDefs,
-            rowData: csvData.data,
-            rowDragManaged: true,
-            suppressMoveWhenRowDragging: true,
-            enableMultiRowDragging: true,
-            animateRows: false,
-            rowSelection: 'multiple',
-            suppressExcelExport: true,
-            onColumnResized: function (params) {
-                if (params.finished && manual) {
-                    manual = false;
-                }
-            },
-            onGridReady: function () {
-                sizeToFit();
-                $scope.dataLoaded = true;
-            },
-            onCellValueChanged: function () {
-                fileChanged();
-            },
-            onColumnMoved: function () {
-                fileChanged();
-            },
-            onRowDragEnd: function () {
-                fileChanged();
-            },
-            onSortChanged: function () {
-                fileChanged();
-            },
-        };
     }
 
-    function getHeadlessCsvData() {
+    /*
+     * When parsing a csv with PapaParse without header = true,
+     * the data we get is structured differently and cannot
+     * be used with AG-Grid easily.
+     * This function takes the headerless data and transforms it,
+     * as if it did have headers.
+     */
+    function generateCorrectCsvData(rawData) {
         let data = [];
-        for (let i = 0; i < csvData.data.length; i++) {
+        for (let i = 0; i < rawData.length; i++) {
             let obj = {};
-            for (let j = 0; j < csvData.data[i].length; j++) {
-                obj[`c_${j}`] = csvData.data[i][j];
+            for (let j = 0; j < rawData[i].length; j++) {
+                obj[`c_${j}`] = rawData[i][j];
             }
             data.push(obj);
         }
@@ -310,8 +283,9 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
             $scope.menuContext.viewport = false;
             $scope.menuContext.row = false;
             $scope.menuContext.column = true;
-        } else
+        } else {
             return
+        }
         if ("x" in params && "y" in params) {
             $scope.menuStyle = {
                 position: "fixed",
@@ -339,6 +313,7 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
                 hideColumnInput();
             }
         });
+        // Unless we do this, we will not be able to use the arrow keys in the input box.
         $scope.gridOptions.navigateToNextHeader = function () { };
     }
 
@@ -354,21 +329,24 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
                 'display': 'inline-block'
             });
             columnInput.off();
-            if (newTitle != columnText.text()) {
-                let columnDefs = $scope.gridOptions.api.getColumnDefs();
-                for (let i = 0; i < columnDefs.length; i++) {
-                    if (columnDefs[i].cid == focusedColumnIndex) {
-                        columnDefs[i].sortable = true;
-                        columnDefs[i].filter = true;
+            let columnDefs = $scope.gridOptions.api.getColumnDefs();
+            for (let i = 0; i < columnDefs.length; i++) {
+                if (columnDefs[i].cid == focusedColumnIndex) {
+                    columnDefs[i].sortable = true;
+                    columnDefs[i].filter = true;
+                    if (newTitle != columnText.text()) {
                         columnDefs[i].headerName = newTitle;
-                        break;
                     }
+                    break;
                 }
-                $scope.gridOptions.api.setColumnDefs(columnDefs);
+            }
+            $scope.gridOptions.api.setColumnDefs(columnDefs);
+            // Unless we do this, we will not be able to use the arrow keys to navigate the grid.
+            $scope.gridOptions.navigateToNextHeader = undefined;
+            if (newTitle != columnText.text()) {
                 fileChanged();
             }
             headerEditMode = false;
-            $scope.gridOptions.navigateToNextHeader = undefined;
         }
     };
 
@@ -421,7 +399,7 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         }
     };
 
-    angular.element($window).bind("keyup", function ($event) {
+    angular.element($window).bind("keyup", function (/*$event*/) {
         ctrlDown = false;
     });
 
@@ -436,41 +414,30 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         $scope.searchInput = "";
         $scope.gridOptions.api.setQuickFilter(undefined);
         $scope.gridOptions.api.setFilterModel(undefined);
-        if ($scope.papaConfig.header) {
-            $scope.gridOptions.api.exportDataAsCsv({
-                columnSeparator: $scope.delimiter,
-                allColumns: true
-            });
-        } else {
-            $scope.gridOptions.api.exportDataAsCsv({
-                skipColumnHeaders: true,
-                columnSeparator: $scope.delimiter,
-                allColumns: true
-            });
-        }
+        $scope.gridOptions.api.exportDataAsCsv({
+            skipColumnHeaders: (($scope.papaConfig.header) ? false : true),
+            columnSeparator: $scope.delimiter
+        });
     };
 
     $scope.save = function () {
         $scope.searchInput = "";
         $scope.gridOptions.api.setQuickFilter(undefined);
         $scope.gridOptions.api.setFilterModel(undefined);
-        if ($scope.papaConfig.header) {
-            contents = $scope.gridOptions.api.getDataAsCsv({
-                columnSeparator: $scope.delimiter,
-                allColumns: true
-            });
-        } else {
-            contents = $scope.gridOptions.api.getDataAsCsv({
-                skipColumnHeaders: true,
-                columnSeparator: $scope.delimiter,
-                allColumns: true
-            });
-        }
+        contents = $scope.gridOptions.api.getDataAsCsv({
+            skipColumnHeaders: (($scope.papaConfig.header) ? false : true),
+            columnSeparator: $scope.delimiter
+        });
         saveContents(contents);
     };
 
     $scope.searchCsv = function () {
         $scope.gridOptions.api.setQuickFilter($scope.searchInput);
+    };
+
+    $scope.hasHeader = function (enabled) {
+        $scope.papaConfig.header = enabled;
+        load(true);
     };
 
     $scope.addRowAbove = function () {
@@ -480,14 +447,8 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         for (let i = 0; i < columns.length; i++) {
             row[columns[i].userProvidedColDef.field] = "";
         }
-        if ($scope.papaConfig.header) {
-            csvData.data.splice(focusedCellIndex, 0, row);
-            $scope.gridOptions.api.setRowData(csvData.data);
-        } else {
-            let data = getHeadlessCsvData();
-            data.splice(focusedCellIndex, 0, row);
-            $scope.gridOptions.api.setRowData(data);
-        }
+        csvData.data.splice(focusedCellIndex, 0, row);
+        $scope.gridOptions.api.setRowData(csvData.data);
         fileChanged();
     };
 
@@ -498,14 +459,8 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         for (let i = 0; i < columns.length; i++) {
             row[columns[i].userProvidedColDef.field] = "";
         }
-        if ($scope.papaConfig.header) {
-            csvData.data.splice(focusedCellIndex + 1, 0, row);
-            $scope.gridOptions.api.setRowData(csvData.data);
-        } else {
-            let data = getHeadlessCsvData();
-            data.splice(focusedCellIndex + 1, 0, row);
-            $scope.gridOptions.api.setRowData(data);
-        }
+        csvData.data.splice(focusedCellIndex + 1, 0, row);
+        $scope.gridOptions.api.setRowData(csvData.data);
         fileChanged();
     };
 
@@ -516,14 +471,8 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         for (let i = 0; i < columns.length; i++) {
             row[columns[i].userProvidedColDef.field] = "";
         }
-        if ($scope.papaConfig.header) {
-            csvData.data.push(row);
-            $scope.gridOptions.api.setRowData(csvData.data);
-        } else {
-            let data = getHeadlessCsvData();
-            data.push(row);
-            $scope.gridOptions.api.setRowData(data);
-        }
+        csvData.data.push(row);
+        $scope.gridOptions.api.setRowData(csvData.data);
         fileChanged();
     };
 
@@ -597,11 +546,6 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         $scope.gridOptions.api.setRowData(csvData.data);
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
-    };
-
-    $scope.hasHeader = function (enabled) {
-        $scope.papaConfig.header = enabled;
-        reload();
     };
 
     checkPlatform();
