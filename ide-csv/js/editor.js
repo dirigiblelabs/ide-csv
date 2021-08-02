@@ -346,6 +346,7 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
                     columnDefs[i].filter = true;
                     if (newTitle != columnText.text()) {
                         columnDefs[i].headerName = newTitle;
+                        fileChanged();
                     }
                     break;
                 }
@@ -356,9 +357,6 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
             let defs = $scope.gridOptions.api.getColumnDefs();
             defs[focusedColumnIndex].suppressMovable = false;
             $scope.gridOptions.api.setColumnDefs(defs);
-            if (newTitle != columnText.text()) {
-                fileChanged();
-            }
             headerEditMode = false;
         }
     };
@@ -509,7 +507,7 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
 
     $scope.addColumn = function () {
         hideContextMenu();
-        let columnDefs = $scope.gridOptions.columnDefs;
+        let columnDefs = $scope.gridOptions.api.getColumnDefs();
         let column = {
             headerName: 'New column',
             field: `New column_${columnDefs.length}`,
@@ -552,11 +550,18 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
 
     $scope.deleteColumn = function () {
         hideContextMenu();
-        let columnDefs = $scope.gridOptions.columnDefs;
-        for (let i = 0; i < csvData.data.length; i++) {
-            delete csvData.data[i][columnDefs[focusedColumnIndex].field];
+        let columnDefs = $scope.gridOptions.api.getColumnDefs();
+        let field = "";
+        for (let i = 0; i < columnDefs.length; i++) {
+            if (columnDefs[i].cid == focusedColumnIndex) {
+                field = columnDefs[i].field;
+                columnDefs.splice(i, 1);
+                break;
+            }
         }
-        columnDefs.splice(focusedColumnIndex, 1);
+        for (let i = 0; i < csvData.data.length; i++) {
+            delete csvData.data[i][field];
+        }
         $scope.gridOptions.api.setRowData(csvData.data);
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
