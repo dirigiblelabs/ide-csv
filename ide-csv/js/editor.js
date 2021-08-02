@@ -44,8 +44,7 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         skipEmptyLines: true,
         dynamicTyping: true,
         transformHeader: function (headerName) {
-            this.columnIndex++;
-            return `${headerName}_${this.columnIndex}`;
+            return `${headerName}_${this.columnIndex++}`;
         },
         complete: function () {
             this.columnIndex = 0;
@@ -513,7 +512,8 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         let columnDefs = $scope.gridOptions.columnDefs;
         let column = {
             headerName: 'New column',
-            field: `New column_${columnDefs.length + 1}`,
+            field: `New column_${columnDefs.length}`,
+            cid: columnDefs.length, // Custom property
             headerComponentParams: {
                 template:
                     `<div cid="${columnDefs.length}" class="ag-cell-label-container" role="presentation">` +
