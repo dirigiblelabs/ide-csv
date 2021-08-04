@@ -8,7 +8,7 @@
   ~ Contributors:
   ~ SAP - initial API and implementation
   -->
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" ng-app="csv-editor" ng-controller="CsvViewController as cvc" xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
 	<meta charset="utf-8" />
@@ -40,12 +40,12 @@
 	<script src="js/papaparse.min.js"></script>
 	<script src="js/ag-grid-community.min.js"></script>
 	<script src="js/editor.js"></script>
-	<link type="text/css" rel="stylesheet" href="css/editor.css" />
+	<link type="text/css" rel="stylesheet" ng-href="{{isDarkMode() ? 'css/editor-dark.css':'css/editor-light.css'}}" />
 
 </head>
 
-<body ng-app="csv-editor" ng-controller="CsvViewController as cvc" class="view csv-editor-body"
-	ng-mousedown="handleClick($event)" oncontextmenu="return false" ng-keydown="keyDownFunc($event)">
+<body class="view csv-editor-body" ng-mousedown="handleClick($event)" oncontextmenu="return false"
+	ng-keydown="keyDownFunc($event)">
 
 	<div class="load-screen" ng-hide="dataLoaded">
 		<p class="text-center">Loading data...</p>
@@ -75,7 +75,7 @@
 		</div>
 	</div>
 
-	<div ag-grid="gridOptions" class="ag-grid-editor ag-theme-alpine" ng-show="dataLoaded">
+	<div ag-grid="gridOptions" class="ag-grid-editor {{isDarkMode() ? 'ag-theme-alpine-dark':'ag-theme-alpine'}}" ng-show="dataLoaded">
 	</div>
 
 	<!-- Context menu -->

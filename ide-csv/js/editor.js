@@ -361,6 +361,15 @@ csvView.controller('CsvViewController', ['$scope', '$window', function ($scope, 
         }
     };
 
+    $scope.isDarkMode = function () {
+        const value = `; ${document.cookie}`;
+        const parts = value.split("; dirigible-theme=");
+        if (parts.length === 2 && parts.pop().split(';').shift() === "default") {
+            return true;
+        }
+        else return false;
+    }
+
     $scope.handleClick = function (event) {
         if (event.which === 3) {
             if (
