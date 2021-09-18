@@ -149,7 +149,7 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
             $scope.papaConfig.quoteChar = quoteChar;
         }
         if ($scope.file) {
-            $http.get('../../../../../../services/v4/ide/workspaces' + $scope.file)
+            $http.get('/services/v4/ide/workspaces' + $scope.file)
                 .then(function (response) {
                     contents = response.data;
                     parseContent();
@@ -228,7 +228,7 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
         console.log('Save called...');
         if ($scope.file) {
             let xhr = new XMLHttpRequest();
-            xhr.open('PUT', '../../../../../../services/v4/ide/workspaces' + $scope.file);
+            xhr.open('PUT', '/services/v4/ide/workspaces' + $scope.file);
             xhr.setRequestHeader('X-Requested-With', 'Fetch');
             xhr.setRequestHeader('X-CSRF-Token', csrfToken);
             xhr.onreadystatechange = function () {
