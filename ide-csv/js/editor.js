@@ -96,6 +96,11 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
         }
     };
 
+    angular.element($window).bind("focus", function () {
+        messageHub.post({ data: { file: $scope.file } }, 'editor.focus.gained');
+        messageHub.post({ text: '' }, 'ide.status.caret');
+    });
+
     function checkPlatform() {
         let platform = window.navigator.platform;
         let macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K', 'darwin', 'Mac', 'mac', 'macOS'];
@@ -172,6 +177,9 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
                 }, function (response) {
                     if (response.data) {
                         if ("error" in response.data) {
+                            messageHub.post({
+                                message: `Error loading '${$scope.file}'`
+                            }, 'ide.status.error');
                             console.error("Loading file:", response.data.error.message);
                         }
                     }
@@ -183,7 +191,7 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
 
     function fileChanged() {
         isFileChanged = true;
-        messageHub.post({ data: $scope.file }, 'editor.file.dirty');
+        messageHub.post({ resourcePath: $scope.file, isDirty: isFileChanged }, 'ide-core.setEditorDirty');
     }
 
     function loadGrid() {
@@ -248,8 +256,15 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     messageHub.post({ data: $scope.file }, 'editor.file.saved');
-                    messageHub.post({ data: 'File [' + $scope.file + '] saved.' }, 'status.message');
+                    messageHub.post({ message: `File '${$scope.file}' saved` }, 'status.message');
+                    messageHub.post({ resourcePath: $scope.file, isDirty: false }, 'ide-core.setEditorDirty');
                 }
+            };
+            xhr.onerror = function (error) {
+                console.error(`Error saving '${$scope.file}'`, error);
+                messageHub.post({
+                    message: `Error saving '${$scope.file}'`
+                }, 'ide.status.error');
             };
             xhr.send(text);
             contents = text;
@@ -584,5 +599,11 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
         $scope.gridOptions.api.setColumnDefs(columnDefs);
         fileChanged();
     };
+
+    messageHub.subscribe(function () {
+        if (isFileChanged) {
+            $scope.save();
+        }
+    }, "editor.file.save.all");
 
 }]);

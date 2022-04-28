@@ -9,15 +9,17 @@
  * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
-exports.getEditor = function () {
-	return {
-		"id": "csv-editor",
-		"name": "CSV Editor",
-		"factory": "frame",
-		"region": "center-top",
-		"label": "CSV Editor",
-		"link": "../ide-csv/editor.html",
-		"defaultEditor": true,
-		"contentTypes": ["text/csv"]
-	};
+const editorData = {
+	id: "csv-editor",
+	factory: "frame",
+	region: "center",
+	label: "CSV Editor",
+	link: "../ide-csv/editor.html",
+	defaultEditor: true,
+	contentTypes: ["text/csv"]
+};
+if (typeof exports !== 'undefined') {
+	exports.getEditor = function () {
+		return editorData;
+	}
 }
