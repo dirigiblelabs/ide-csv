@@ -256,7 +256,7 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     messageHub.post({ data: $scope.file }, 'editor.file.saved');
-                    messageHub.post({ message: `File '${$scope.file}' saved` }, 'status.message');
+                    messageHub.post({ message: `File '${$scope.file}' saved` }, 'ide.status.message');
                     messageHub.post({ resourcePath: $scope.file, isDirty: false }, 'ide-core.setEditorDirty');
                 }
             };
