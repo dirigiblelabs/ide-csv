@@ -15,8 +15,7 @@ const editorData = {
 	region: "center",
 	label: "CSV Editor",
 	link: "../ide-csv/editor.html",
-	defaultEditor: true,
-	contentTypes: ["text/csv"]
+	contentTypes: ["text/csv"],
 };
 if (typeof exports !== 'undefined') {
 	exports.getEditor = function () {
