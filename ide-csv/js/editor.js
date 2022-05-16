@@ -84,7 +84,7 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
     };
     $scope.papaConfig = {
         columnIndex: 0, // Custom property, needed for duplicated column names
-        delimitersToGuess: [',', '\t', '|', ';', '#', Papa.RECORD_SEP, Papa.UNIT_SEP],
+        delimitersToGuess: [',', '\t', '|', ';', '#', '~', Papa.RECORD_SEP, Papa.UNIT_SEP],
         header: true,
         skipEmptyLines: true,
         dynamicTyping: true,
