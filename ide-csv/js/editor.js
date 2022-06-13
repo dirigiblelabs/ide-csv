@@ -180,6 +180,13 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
                             messageHub.post({
                                 message: `Error loading '${$scope.file}'`
                             }, 'ide.status.error');
+                            messageHub.post({
+                                data: {
+                                    title: 'Error while loading the file',
+                                    message: 'Please look at the console for more information',
+                                    type: 'error'
+                                }
+                            }, 'ide.alert');
                             console.error("Loading file:", response.data.error.message);
                         }
                     }
@@ -255,7 +262,12 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
             xhr.setRequestHeader('X-CSRF-Token', csrfToken);
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
-                    messageHub.post({ data: $scope.file }, 'editor.file.saved');
+                    messageHub.post({
+                        name: $scope.file.substring($scope.file.lastIndexOf('/') + 1),
+                        path: $scope.file.substring($scope.file.indexOf('/', 1)),
+                        contentType: 'text/csv', // TODO: Take this from data-parameters
+                        workspace: $scope.file.substring(1, $scope.file.indexOf('/', 1)),
+                    }, 'ide.file.saved');
                     messageHub.post({ message: `File '${$scope.file}' saved` }, 'ide.status.message');
                     messageHub.post({ resourcePath: $scope.file, isDirty: false }, 'ide-core.setEditorDirty');
                 }
@@ -265,6 +277,13 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
                 messageHub.post({
                     message: `Error saving '${$scope.file}'`
                 }, 'ide.status.error');
+                messageHub.post({
+                    data: {
+                        title: 'Error while saving the file',
+                        message: 'Please look at the console for more information',
+                        type: 'error'
+                    }
+                }, 'ide.alert');
             };
             xhr.send(text);
             contents = text;
@@ -605,5 +624,11 @@ csvView.controller('CsvViewController', ['$scope', '$http', '$window', function 
             $scope.save();
         }
     }, "editor.file.save.all");
+
+    messageHub.subscribe(function (msg) {
+        let file = msg.data && typeof msg.data === 'object' && msg.data.file;
+        if (file && file === $scope.file && isFileChanged)
+            $scope.save();
+    }, "editor.file.save");
 
 }]);
